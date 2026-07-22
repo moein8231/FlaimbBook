@@ -1,0 +1,35 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract project zip if present
+        run: |
+          shopt -s nullglob
+          zips=(*.zip)
+          if [ ${#zips[@]} -gt 0 ]; then
+            unzip -o "${zips[0]}" -d .
+            rm -f "${zips[0]}"
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - run: chmod +x gradlew || true
+      - run: gradle wrapper --gradle-version 8.7 || true
+      - run: ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Flaim-book-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
